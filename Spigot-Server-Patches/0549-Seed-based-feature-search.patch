@@ -15,10 +15,10 @@ changes but this should usually not happen. A config option to disable
 this improvement is added though in case that should ever be necessary.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index cab503bd5c34d12b38a2f5deed6d3feb9287b370..2ab810f71beaa608af2194165696817a2cde4b92 100644
+index e471e764935e2a89560de56959a782b02e5e8fe1..28254ccc85f9fc5e4d4aae684f4d05a2b96749b4 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -357,6 +357,12 @@ public class PaperWorldConfig {
+@@ -330,6 +330,12 @@ public class PaperWorldConfig {
          }
      }
  
@@ -32,15 +32,10 @@ index cab503bd5c34d12b38a2f5deed6d3feb9287b370..2ab810f71beaa608af2194165696817a
      private void maxEntityCollision() {
          maxCollisionsPerEntity = getInt( "max-entity-collisions", this.spigotConfig.getInt("max-entity-collisions", 8) );
 diff --git a/src/main/java/net/minecraft/server/BiomeManager.java b/src/main/java/net/minecraft/server/BiomeManager.java
-index e96f544f126371f6f629a20ba3c99ba42d31e04a..68423645df3aa08d4c5126ff068d5e566927f744 100644
+index 5c992812e0c066109763a30c9399e5b71a335398..fddcd205ee4d841546463913f56f998059cba248 100644
 --- a/src/main/java/net/minecraft/server/BiomeManager.java
 +++ b/src/main/java/net/minecraft/server/BiomeManager.java
-@@ -12,10 +12,12 @@ public class BiomeManager {
-         this.c = genlayerzoomer;
-     }
- 
-+    public BiomeManager withProvider(WorldChunkManager worldchunkmanager) { return a(worldchunkmanager); } // Paper - OBFHELPER
-     public BiomeManager a(WorldChunkManager worldchunkmanager) {
+@@ -22,6 +22,7 @@ public class BiomeManager {
          return new BiomeManager(worldchunkmanager, this.b, this.c);
      }
  
@@ -49,7 +44,7 @@ index e96f544f126371f6f629a20ba3c99ba42d31e04a..68423645df3aa08d4c5126ff068d5e56
          return this.c.a(this.b, blockposition.getX(), blockposition.getY(), blockposition.getZ(), this.a);
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkCoordIntPair.java b/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
-index 5a975f6bc60922ac872ec9c00c9150ce7dcad046..f617636a22167b06ac8073aa25efd8c7099155f0 100644
+index f47a6e0027de6886991aad5bcb98a04157aeb846..e08594d6be9eb4db24db3adb31904086a394eb9b 100644
 --- a/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
 +++ b/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
 @@ -68,10 +68,12 @@ public class ChunkCoordIntPair {
@@ -66,38 +61,41 @@ index 5a975f6bc60922ac872ec9c00c9150ce7dcad046..f617636a22167b06ac8073aa25efd8c7
          return this.z << 4;
      }
 diff --git a/src/main/java/net/minecraft/server/StructureGenerator.java b/src/main/java/net/minecraft/server/StructureGenerator.java
-index e8ce2ecf23e58d82febf6b9441e0004e69cdc858..acfe732af5b9f63fc2f6b78499defabe2e73ee45 100644
+index 6eb81504146af614a806add6e5effe0c2b111c8a..3696f0306734131314933a698e2b434d92409f6d 100644
 --- a/src/main/java/net/minecraft/server/StructureGenerator.java
 +++ b/src/main/java/net/minecraft/server/StructureGenerator.java
-@@ -109,6 +109,15 @@ public abstract class StructureGenerator<C extends WorldGenFeatureConfiguration>
-                             if (flag1 || flag2) {
-                                 ChunkCoordIntPair chunkcoordintpair = this.a(chunkgenerator, seededrandom, j, k, i1, j1);
-                                 if (!world.getWorldBorder().isChunkInBounds(chunkcoordintpair.x, chunkcoordintpair.z)) { continue; } // Paper
-+                                // Paper start - seed based feature search
-+                                if (world.paperConfig.seedBasedFeatureSearch) {
-+                                    BiomeManager biomeManager = world.getBiomeManager().withProvider(chunkgenerator.getWorldChunkManager());
-+                                    BiomeBase biomeBase = biomeManager.getBiome(new BlockPosition(chunkcoordintpair.getBlockX() + 9, 0, chunkcoordintpair.getBlockZ() + 9));
-+                                    if (!shouldGenerate(biomeManager, chunkgenerator, seededrandom, chunkcoordintpair.x, chunkcoordintpair.z, biomeBase)) {
-+                                        continue;
-+                                    }
+@@ -139,6 +139,14 @@ public abstract class StructureGenerator<C extends WorldGenFeatureConfiguration>
+                             int j2 = i1 + k * l1;
+                             ChunkCoordIntPair chunkcoordintpair = this.a(structuresettingsfeature, j, seededrandom, i2, j2);
+                             if (!iworldreader.getWorldBorder().isChunkInBounds(chunkcoordintpair.x, chunkcoordintpair.z)) { continue; } // Paper
++                            // Paper start - seed based feature search
++                            if (structuremanager.getWorld().paperConfig.seedBasedFeatureSearch) {
++                                BiomeBase biomeBase = structuremanager.getWorld().getBiomeManager().getBiome(new BlockPosition(chunkcoordintpair.getBlockX() + 9, 0, chunkcoordintpair.getBlockZ() + 9));
++                                if (!shouldGenerate(((WorldServer) structuremanager.getWorld()).getChunkProvider().chunkGenerator, ((WorldServer) structuremanager.getWorld()).getChunkProvider().chunkGenerator.getWorldChunkManager(), j, seededrandom, i2, j2, biomeBase, chunkcoordintpair, )) {
++                                    continue;
 +                                }
-+                                // Paper end
-                                 StructureStart structurestart = world.getChunkAt(chunkcoordintpair.x, chunkcoordintpair.z, ChunkStatus.STRUCTURE_STARTS).a(this.b());
++                            }
++                            // Paper end
+                             IChunkAccess ichunkaccess = iworldreader.getChunkAt(chunkcoordintpair.x, chunkcoordintpair.z, ChunkStatus.STRUCTURE_STARTS);
+                             StructureStart<?> structurestart = structuremanager.a(SectionPosition.a(ichunkaccess.getPos(), 0), this, ichunkaccess);
  
-                                 if (structurestart != null && structurestart.e()) {
-@@ -165,6 +174,7 @@ public abstract class StructureGenerator<C extends WorldGenFeatureConfiguration>
-         return new ChunkCoordIntPair(i + k, j + l);
+@@ -198,6 +206,11 @@ public abstract class StructureGenerator<C extends WorldGenFeatureConfiguration>
+         return new ChunkCoordIntPair(j1 * l + l1, k1 * l + i2);
      }
  
-+    public boolean shouldGenerate(BiomeManager biomemanager, ChunkGenerator<?> chunkgenerator, Random random, int chunkX, int chunkZ, BiomeBase biomebase) { return a(biomemanager, chunkgenerator, random, chunkX, chunkZ, biomebase); } // Paper - OBFHELPER
-     public abstract boolean a(BiomeManager biomemanager, ChunkGenerator<?> chunkgenerator, Random random, int i, int j, BiomeBase biomebase);
- 
-     public abstract StructureGenerator.a a();
++    // Paper start - OBFHELPER
++    protected boolean shouldGenerate(ChunkGenerator chunkgenerator, WorldChunkManager worldchunkmanager, long i, SeededRandom seededrandom, int j, int k, BiomeBase biomebase, ChunkCoordIntPair chunkcoordintpair, C c0) {
++        return a(chunkgenerator, worldchunkmanager, i, seededrandom, j, k, biomebase, chunkcoordintpair, c0);
++    }
++    // Paper - end
+     protected boolean a(ChunkGenerator chunkgenerator, WorldChunkManager worldchunkmanager, long i, SeededRandom seededrandom, int j, int k, BiomeBase biomebase, ChunkCoordIntPair chunkcoordintpair, C c0) {
+         return true;
+     }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 0fa2b335db297c6270090d3dd24ced92eab12825..d7ac4c86d170a8d7d816f86ac691c3b5129a20ba 100644
+index 5f81997db78c989e942351e80a0d2558f4b90fcd..58b9618d12ba832d0752b81a34ba79e2caa4dee9 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1570,8 +1570,8 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -1529,8 +1529,8 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
          return this.methodProfiler;
      }
  
@@ -107,4 +105,4 @@ index 0fa2b335db297c6270090d3dd24ced92eab12825..d7ac4c86d170a8d7d816f86ac691c3b5
 +    @Override public BiomeManager d() {
          return this.biomeManager;
      }
- }
+ 
