@@ -26,7 +26,7 @@ index 26e18a08a7f0bd704ff3055ce3a7814191450c85..deafdf54d4ebddf225533b0372217d25
  }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 181ab56448796a617f30f1b9e0fec8917b5d8e07..3e9d2272d7a8ec38a0e9cb0929e188cf58fccfb6 100644
+index 181ab56448796a617f30f1b9e0fec8917b5d8e07..331173eb63ea46ba867f34ba9c8343c3a90b14e6 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -1418,7 +1418,7 @@ public class ServerPlayer extends Player {
@@ -34,7 +34,7 @@ index 181ab56448796a617f30f1b9e0fec8917b5d8e07..3e9d2272d7a8ec38a0e9cb0929e188cf
      @Override
      public boolean isInvulnerableTo(DamageSource damageSource) {
 -        return super.isInvulnerableTo(damageSource) || this.isChangingDimension() || this.getAbilities().invulnerable && damageSource == DamageSource.WITHER;
-+        return super.isInvulnerableTo(damageSource) || this.isChangingDimension() || (!level.paperConfig.allowPlayerCrammingDamage && damageSource == DamageSource.CRAMMING) || this.getAbilities().invulnerable && damageSource == DamageSource.WITHER;
++        return super.isInvulnerableTo(damageSource) || this.isChangingDimension() || this.getAbilities().invulnerable && damageSource == DamageSource.WITHER || !level.paperConfig.allowPlayerCrammingDamage && damageSource == DamageSource.CRAMMING; // Paper - disable player cramming
      }
  
      @Override
